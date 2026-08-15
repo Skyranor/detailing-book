@@ -1,0 +1,14 @@
+{
+  "name": "detailing-book",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Книга «Детейлинг: от новичка до владельца студии»",
+  "scripts": {
+    "lint": "node scripts/lint.mjs",
+    "lint:report": "node scripts/lint.mjs --report"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
