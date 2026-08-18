@@ -4,3 +4,10 @@ node_modules/
 
 # Личное: черновики глав и заметки, которые не идут в книгу
 drafts/
+
+# Сборка сайта
+.next/
+out/
+next-env.d.ts
+.vercel/
+tsconfig.tsbuildinfo
