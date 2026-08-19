@@ -3,7 +3,9 @@
     "allow": [
       "Bash(awk '/^## Разбор брака/{f=1} /^## Мифы/{f=0} f{c+=NF} END{print \"разбор брака: \"c\" слов\"}' chapters/04-chemistry-basics.md)",
       "Bash(awk '/^## Разбор брака/{f=1} /^## Мифы/{f=0} f{c+=NF} END{print \"разбор брака: \"c\" слов\"}' chapters/05-defect-optics.md)",
-      "Bash(awk '/^## Разбор брака/{f=1} /^## Мифы/{f=0} f{c+=NF} END{print \"разбор брака: \"c\" слов\"}' chapters/06-measurement.md)"
+      "Bash(awk '/^## Разбор брака/{f=1} /^## Мифы/{f=0} f{c+=NF} END{print \"разбор брака: \"c\" слов\"}' chapters/06-measurement.md)",
+      "Bash(awk '/^## Разбор брака/{f=1} /^## Мифы/{f=0} f{c+=NF} END{print \"разбор брака: \"c\" слов\"}' chapters/07-safety.md)",
+      "Bash(grep -c \"^   | \\\\`0\" system/continue.md)"
     ]
   }
 }
