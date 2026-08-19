@@ -169,9 +169,14 @@ body {
 
 .prose h2[data-kind='safety']::before,
 .prose h2[data-kind='cost']::before,
+.prose h2[data-kind='case']::before,
 .prose h2[data-kind='never']::before,
 .prose h2[data-kind='promise']::before {
   background: var(--danger);
+}
+
+.prose h2[data-kind='diagnosis']::before {
+  background: var(--info);
 }
 
 .prose h2[data-kind='test']::before,
@@ -333,6 +338,75 @@ body {
   text-wrap: balance;
 }
 
+/* Телефон: половина книги живёт в таблицах, а таблица из пяти колонок
+   на экране 360 точек нечитаема даже с прокруткой. Строка становится
+   карточкой, название колонки уезжает в ячейку вместе со строкой. */
+@media (max-width: 640px) {
+  .table-scroll {
+    border: none;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    overflow-x: visible;
+  }
+
+  .prose table,
+  .prose tbody,
+  .prose tbody tr,
+  .prose tbody td {
+    display: block;
+    width: auto;
+  }
+
+  .prose thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .prose tbody tr {
+    margin: 0 0 0.85rem;
+    padding: 0.35rem 0.95rem 0.5rem;
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    background: var(--paper-raised);
+    box-shadow: var(--shadow-card);
+  }
+
+  .prose tbody td {
+    padding: 0.5rem 0;
+    min-width: 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .prose tbody td:last-child {
+    border-bottom: none;
+  }
+
+  .prose tbody td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 0.15rem;
+    font-family: var(--font-sans);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .prose tbody td:empty {
+    display: none;
+  }
+
+  .prose tbody tr:hover td {
+    background: none;
+  }
+}
+
 /* Схемы и расчёты: моноширинный блок с горизонтальной прокруткой. */
 .prose pre {
   margin: 1.9rem 0;
@@ -410,10 +484,11 @@ body {
   font-style: normal;
 }
 
-/* Плашка предупреждения. */
+/* Плашки и врезки. Предупреждение — со значком, остальные — с меткой
+   из жирного слова, которым врезка начинается в тексте главы. */
 .callout {
   margin: 1.7rem 0;
-  padding: 1rem 1.15rem 1rem 3rem;
+  padding: 1rem 1.15rem;
   border-radius: 12px;
   border: 1px solid color-mix(in srgb, var(--money) 30%, transparent);
   background: var(--money-soft);
@@ -421,7 +496,11 @@ body {
   max-width: min(100%, calc(var(--measure) + 4rem));
 }
 
-.callout::before {
+.callout--warn {
+  padding-left: 3rem;
+}
+
+.callout--warn::before {
   content: '⚠';
   position: absolute;
   left: 1.05rem;
@@ -429,6 +508,88 @@ body {
   font-size: 1.1rem;
   line-height: 1.4;
   color: var(--money);
+}
+
+/* Врезка: жирное слово в начале абзаца становится меткой блока. */
+.callout--example,
+.callout--source,
+.callout--novice,
+.callout--pro {
+  border-left-width: 3px;
+  padding-top: 0.85rem;
+}
+
+.callout--example > p:first-child > strong:first-child,
+.callout--source > p:first-child > strong:first-child,
+.callout--novice > p:first-child > strong:first-child,
+.callout--pro > p:first-child > strong:first-child {
+  display: block;
+  margin-bottom: 0.15rem;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.callout--example {
+  border-color: color-mix(in srgb, var(--info) 30%, transparent);
+  background: var(--info-soft);
+}
+
+.callout--example > p:first-child > strong:first-child {
+  color: var(--info);
+}
+
+.callout--source {
+  border-color: var(--rule-strong);
+  background: var(--paper-sunk);
+}
+
+.callout--source > p:first-child > strong:first-child {
+  color: var(--ink-faint);
+}
+
+.callout--novice {
+  border-color: color-mix(in srgb, var(--success) 30%, transparent);
+  background: var(--success-soft);
+}
+
+.callout--novice > p:first-child > strong:first-child {
+  color: var(--success);
+}
+
+.callout--pro {
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  background: var(--accent-soft);
+}
+
+.callout--pro > p:first-child > strong:first-child {
+  color: var(--accent);
+}
+
+/* Фотография с подписью: подпись говорит, что именно смотреть. */
+.figure-img {
+  margin: 2rem 0;
+  max-width: min(100%, calc(var(--measure) + 6rem));
+}
+
+.figure-img img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid var(--rule);
+  background: var(--paper-sunk);
+}
+
+.figure-img figcaption {
+  margin-top: 0.6rem;
+  font-family: var(--font-sans);
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  text-wrap: pretty;
 }
 
 .callout > p {

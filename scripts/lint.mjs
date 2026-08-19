@@ -30,6 +30,15 @@ const DECORATIVE =
 /** Максимальная ширина строки внутри блока `text`: шире — ломается переносом. */
 const MAX_FENCE_WIDTH = 80;
 
+/** Слова, с которых начинается врезка (CONVENTIONS §4). */
+const CALLOUT_WORDS = new Set(['Пример', 'Откуда цифра', 'Для новичка', 'Для опытного']);
+
+/**
+ * Начала абзацев, похожие на врезку. Опечатка в слове не ломает сборку —
+ * абзац просто выходит обычным текстом, поэтому её ловит линтер.
+ */
+const CALLOUT_NEAR = /^(пример|откуда|для новичк|для опытн|внимание|важно)/i;
+
 /**
  * Файлы, где запрещённые формы — сам предмет текста: перечисление
  * недопустимых символов, примеры битых ссылок, тексты промтов.
@@ -71,12 +80,13 @@ async function plannedChapters() {
   return set;
 }
 
-/** Ссылки с учётом вложенных скобок в тексте ссылки. */
+/** Ссылки и изображения с учётом вложенных скобок в тексте ссылки. */
 function findLinks(line) {
   const out = [];
   for (let i = 0; i < line.length; i++) {
     if (line[i] !== '[') continue;
     if (i > 0 && line[i - 1] === '\\') continue;
+    const isImage = i > 0 && line[i - 1] === '!';
     let depth = 0;
     let end = -1;
     for (let j = i; j < line.length; j++) {
@@ -92,7 +102,11 @@ function findLinks(line) {
     if (end === -1 || line[end + 1] !== '(') continue;
     const close = line.indexOf(')', end + 2);
     if (close === -1) continue;
-    out.push(line.slice(end + 2, close).trim());
+    out.push({
+      target: line.slice(end + 2, close).trim(),
+      text: line.slice(i + 1, end).trim(),
+      isImage,
+    });
     i = close;
   }
   return out;
@@ -175,8 +189,34 @@ async function lintFile(file, planningSet) {
       inDetails = false;
     }
 
-    // --- ссылки ---
-    for (const target of findLinks(line)) {
+    // --- врезки: слово из списка §4 или обычный текст, но не «почти врезка» ---
+    const callout = trimmed.match(/^\*\*([^*]{1,24})[.:]\*\*/);
+    if (callout) {
+      const word = callout[1].trim();
+      if (!CALLOUT_WORDS.has(word) && CALLOUT_NEAR.test(word)) {
+        report(
+          file,
+          num,
+          'callout-unknown',
+          `врезка «${word}» не из списка ${[...CALLOUT_WORDS].join(' / ')}`,
+        );
+      }
+    }
+
+    // --- ссылки и изображения ---
+    for (const { target, text, isImage } of findLinks(line)) {
+      if (isImage) {
+        if (!text) report(file, num, 'image-no-alt', 'изображение без подписи');
+        if (/^(https?:|data:)/.test(target)) continue;
+        // Сайт отдаёт содержимое public по адресу от корня: /img/… → public/img/…
+        const abs = target.startsWith('/')
+          ? path.join(ROOT, 'public', target)
+          : path.resolve(path.dirname(file), target);
+        if (!existsSync(abs)) {
+          report(file, num, 'image-missing', `нет файла изображения: ${target}`);
+        }
+        continue;
+      }
       if (/^(https?:|mailto:|#)/.test(target)) continue;
       const clean = target.split('#')[0];
       if (!clean) continue;
@@ -204,7 +244,7 @@ async function lintFile(file, planningSet) {
         file,
         lines.length,
         'footer-missing',
-        'нет подвала навигации (CONVENTIONS §5)',
+        'нет подвала навигации (CONVENTIONS §7)',
       );
     }
   }

@@ -20,16 +20,19 @@ const SECTION_KINDS: Array<[RegExp, string]> = [
   [/^Зачем это знать/i, 'why'],
   [/^Ментальная модель/i, 'model'],
   [/^Что происходит физически/i, 'physics'],
+  [/^Симптом и причина/i, 'diagnosis'],
   [/^Протокол/i, 'protocol'],
   [/^Проверка на тест-панели/i, 'test'],
   [/^Безопасность/i, 'safety'],
   [/^Цена ошибки/i, 'cost'],
+  [/^Разбор брака/i, 'case'],
   [/^Мифы/i, 'myths'],
   [/^Срок годности совета/i, 'expiry'],
   [/^Ловушки перехода/i, 'traps'],
   [/^Что меняется на потоке/i, 'flow'],
   [/^Деньги/i, 'money'],
   [/^Что нельзя обещать клиенту/i, 'promise'],
+  [/^Разговор с клиентом/i, 'promise'],
   [/^Глубже/i, 'deeper'],
   [/^Правила мастера/i, 'rules'],
   [/^Так делать нельзя/i, 'never'],
@@ -44,6 +47,18 @@ const MARKERS: Record<string, string> = {
   'НЕ ОБЕЩАЙ КЛИЕНТУ': 'promise',
 };
 
+/**
+ * Врезки: абзац, начинающийся с жирного слова из этого списка
+ * (CONVENTIONS §4). Слово остаётся меткой внутри врезки, поэтому
+ * в тексте оно пишется дословно и с точкой.
+ */
+const CALLOUTS: Record<string, string> = {
+  'Пример': 'example',
+  'Откуда цифра': 'source',
+  'Для новичка': 'novice',
+  'Для опытного': 'pro',
+};
+
 const MARKER_RE = /\[(ПРОВЕРЬ TDS|СПОРНО|НЕ ОБЕЩАЙ КЛИЕНТУ)\]/g;
 const ICON_RE = /([❌✅])/g;
 
@@ -54,6 +69,46 @@ function sectionKind(text: string): string | null {
 
 function el(tagName: string, properties: Properties, children: ElementContent[]): Element {
   return { type: 'element', tagName, properties, children };
+}
+
+function children(node: Element, tagName: string): Element[] {
+  return node.children.filter(
+    (c): c is Element => c.type === 'element' && c.tagName === tagName,
+  );
+}
+
+/** Названия колонок кладутся в сами ячейки: на телефоне шапки не видно. */
+function labelCells(table: Element): void {
+  const head = children(table, 'thead')[0];
+  const headRow = head ? children(head, 'tr')[0] : undefined;
+  const titles = headRow ? children(headRow, 'th').map((th) => toString(th).trim()) : [];
+  if (!titles.length) return;
+
+  for (const body of children(table, 'tbody')) {
+    for (const row of children(body, 'tr')) {
+      children(row, 'td').forEach((cell, i) => {
+        if (titles[i]) cell.properties = { ...cell.properties, 'data-label': titles[i] };
+      });
+    }
+  }
+}
+
+/** Абзац целиком занят изображением: обычная картинка внутри строки — редкость. */
+function loneImage(node: Element): Element | null {
+  const meaningful = node.children.filter(
+    (c) => !(c.type === 'text' && !c.value.trim()),
+  );
+  if (meaningful.length !== 1) return null;
+  const only = meaningful[0];
+  return only.type === 'element' && only.tagName === 'img' ? only : null;
+}
+
+/** Жирное слово в начале абзаца → врезка (CONVENTIONS §4). */
+function calloutKind(node: Element): string | null {
+  const first = node.children[0];
+  if (first?.type !== 'element' || first.tagName !== 'strong') return null;
+  const label = toString(first).trim().replace(/[.:]$/, '');
+  return CALLOUTS[label] ?? null;
 }
 
 export type RenderOptions = {
@@ -152,9 +207,12 @@ function rehypeBook(options: RenderOptions) {
     });
 
     // Таблицы шире экрана: горизонтальная прокрутка вместо ломаной вёрстки.
+    // На телефоне таблица разворачивается в карточки, и каждой ячейке
+    // нужно название своей колонки — оно уезжает вместе со строкой.
     visit(tree, 'element', (node: Element, index, parent) => {
       if (node.tagName !== 'table' || !parent || typeof index !== 'number') return;
       if ((parent as Element).tagName === 'figure') return;
+      labelCells(node);
       parent.children[index] = el('figure', { className: ['table-scroll'] }, [node]);
     });
 
@@ -171,6 +229,18 @@ function rehypeBook(options: RenderOptions) {
       node.properties = { ...node.properties, 'data-lang': lang || 'text' };
     });
 
+    // Фотография в отдельном абзаце → врезка с подписью из alt.
+    visit(tree, 'element', (node: Element, index, parent) => {
+      if (node.tagName !== 'p' || !parent || typeof index !== 'number') return;
+      const img = loneImage(node);
+      if (!img) return;
+      const alt = typeof img.properties?.alt === 'string' ? img.properties.alt.trim() : '';
+      img.properties = { ...img.properties, loading: 'lazy', decoding: 'async' };
+      const parts: ElementContent[] = [img];
+      if (alt) parts.push(el('figcaption', {}, [{ type: 'text', value: alt }]));
+      parent.children[index] = el('figure', { className: ['figure-img'] }, parts);
+    });
+
     // Абзацы-предупреждения: ⚠️ в начале строки → выделенная плашка.
     visit(tree, 'element', (node: Element, index, parent) => {
       if (node.tagName !== 'p' || !parent || typeof index !== 'number') return;
@@ -178,6 +248,14 @@ function rehypeBook(options: RenderOptions) {
       if (first?.type !== 'text' || !/^\s*⚠️?/.test(first.value)) return;
       (first as Text).value = first.value.replace(/^\s*⚠️?\s*/, '');
       parent.children[index] = el('div', { className: ['callout', 'callout--warn'] }, [node]);
+    });
+
+    // Врезки «Пример», «Откуда цифра», «Для новичка», «Для опытного».
+    visit(tree, 'element', (node: Element, index, parent) => {
+      if (node.tagName !== 'p' || !parent || typeof index !== 'number') return;
+      const kind = calloutKind(node);
+      if (!kind) return;
+      parent.children[index] = el('div', { className: ['callout', `callout--${kind}`] }, [node]);
     });
 
     if (options.dropRules) {
