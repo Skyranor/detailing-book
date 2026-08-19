@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(awk '/^## Разбор брака/{f=1} /^## Мифы/{f=0} f{c+=NF} END{print \"разбор брака: \"c\" слов\"}' chapters/04-chemistry-basics.md)"
+    ]
+  }
+}
