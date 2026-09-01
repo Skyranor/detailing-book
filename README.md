@@ -163,7 +163,7 @@
 | № | Глава | Статус |
 | --- | --- | --- |
 | 16 | [Приёмка и дефектовка](chapters/16-intake-and-inspection.md) | ✅ |
-| 17 | [Теория абразивной коррекции](chapters/17-abrasive-theory.md) | ⬜ |
+| 17 | [Теория абразивной коррекции](chapters/17-abrasive-theory.md) | ✅ |
 | 18 | [Машинки: ротор, DA, forced rotation](chapters/18-machines.md) | ⬜ |
 | 19 | [Круги и пады](chapters/19-pads.md) | ⬜ |
 | 20 | [Пасты и подбор комбинации под лак](chapters/20-compounds.md) | ⬜ |
