@@ -619,4 +619,4 @@ $$\text{Себестоимость} = 4,80 \text{ (поролон/микрофи
 
 ---
 
-[← 18. Машинки: ротор, DA, forced rotation](18-machines.md) · [Оглавление](../README.md)
+[← 18. Машинки: ротор, DA, forced rotation](18-machines.md) · [Оглавление](../README.md) · [20. Пасты и подбор комбинации под лак →](20-compounds.md)
