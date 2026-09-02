@@ -716,4 +716,4 @@
 
 ---
 
-[← 16. Приёмка и дефектовка](16-intake-and-inspection.md) · [Оглавление](../README.md)
+[← 16. Приёмка и дефектовка](16-intake-and-inspection.md) · [Оглавление](../README.md) · [18. Машинки: ротор, DA, forced rotation →](18-machines.md)
